@@ -38,8 +38,10 @@ class Game:
         self.attempts = 0
         self.messages = []
         self.level_complete = False
+        self.current_level = 1
 
     def load_level(self, level):
+        self.current_level = level
         self.platforms.clear()
         self.portals.clear()
         self.speed_portals.clear()
@@ -83,7 +85,11 @@ class Game:
 
         # Пускане на музиката при зареждане на нивото
         pygame.mixer.music.load(music_file)
-        pygame.mixer.music.set_volume(0.5) 
+
+        if self.current_level == 1:
+            pygame.mixer.music.set_volume(0.5) 
+        if self.current_level == 2:
+            pygame.mixer.music.set_volume(0.1)
 
         pygame.mixer.music.play()
 
@@ -97,10 +103,10 @@ class Game:
                 self.ball.on_ground = True
                 break
 
-    def reset_level(self, level):
+    def reset_level(self):
         self.ball = None
         self.finish_line = None
-        self.load_level(level)
+        self.load_level(self.current_level)
 
         pygame.mixer.music.stop()
         pygame.mixer.music.play()
@@ -159,7 +165,7 @@ class Game:
             self.level_complete = True
 
         elif result:
-            self.reset_level(1)
+            self.reset_level()
 
         self.camera_x = max(0, self.ball.x - WIDTH // 3)
 
@@ -171,5 +177,10 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.mixer.music.stop()
+                    menu.level_menu()
+                    return False
         
         return True

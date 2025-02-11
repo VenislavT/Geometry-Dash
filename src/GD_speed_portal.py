@@ -6,7 +6,7 @@ class Speed_portal:
         self.x = x
         self.y = y - TILE_SIZE
         self.type = type
-        self.color = YELLOW if type == "speed" else PURPLE
+        self.color = YELLOW if type == "speed_up" else PURPLE
         self.collided = False
 
     def draw(self, screen, camera_x):

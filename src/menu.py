@@ -96,21 +96,23 @@ def load_level_images(directory):
             level_images.append(scaled_image)
     return level_images
 
+current_level = 0
 def level_menu():
 
     level_images = load_level_images("menu_assets/levels")
-    current_level = 0
+    
 
     def next_level():
-        nonlocal current_level
+        global current_level
         current_level = (current_level + 1) % len(level_images)
 
     def previous_level():
-        nonlocal current_level
+        global current_level
         current_level = (current_level - 1) % len(level_images)
 
     def start_level():
         GD.game_loop(current_level + 1)
+
 
     arrow_right_image = pygame.image.load("menu_assets/arrow_right.png")
     arrow_left_image = pygame.image.load("menu_assets/arrow_left.png")
