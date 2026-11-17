@@ -1,24 +1,19 @@
 import pygame
-import sys
 import os
-from GD_constants import *
-import GD
+from .constants import *
+from . import game_loop
+from .game import find_levels, level_directory, load_level_assets
 pygame.init()
 
-SCREEN_WIDTH = 1200
-SCREEN_HEIGHT = 700
-
-BUTTON_WIDTH = SCREEN_WIDTH // 3
-BUTTON_HEIGHT = SCREEN_HEIGHT // 3
+SCREEN_WIDTH = WIDTH
+SCREEN_HEIGHT = HEIGHT
 
 BIG_BUTTON_WIDTH = SCREEN_WIDTH // 2
 BIG_BUTTON_HEIGHT = SCREEN_HEIGHT // 2
-
-ARROW_WIDTH = SCREEN_WIDTH // 12
-ARROW_HEIGHT = SCREEN_HEIGHT // 12
+ARROW_DISTANCE = 40
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("GOLF CHALLENGES")
+pygame.display.set_caption("Geometry Dash")
 
 class Button:
     def __init__(self, image, x, y, action = None):
@@ -26,7 +21,6 @@ class Button:
         self.x = x
         self.y = y
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.original_image = self.image
         self.hovered_image = pygame.transform.scale(self.image, 
                                                     (int(self.rect.width * 1.1), 
                                                      int(self.rect.height * 1.1)))
@@ -48,59 +42,58 @@ class Button:
 
     def check_click(self, position):
         if self.is_hovered(position) and self.action:
-            self.action()
+            return self.action()
+        return None
 
 
 def start_menu():
     def start_game():
-        level_menu()
+        return level_menu()
 
     def exit_game():
-        pygame.quit()
-        sys.exit()
+        return "quit"
 
-    play_image = pygame.image.load("menu_assets/play.png")
-    exit_image = pygame.image.load("menu_assets/exit.png")
+    background = pygame.image.load(os.path.join(MENU_DIR, "background.png")).convert()
+    play_image = pygame.image.load(os.path.join(MENU_DIR, "play.png")).convert_alpha()
+    exit_image = pygame.image.load(os.path.join(MENU_DIR, "exit.png")).convert_alpha()
 
-    play_image = pygame.transform.scale(play_image, (BUTTON_WIDTH - 15, BUTTON_HEIGHT))
-    exit_image = pygame.transform.scale(exit_image, (BUTTON_WIDTH, BUTTON_HEIGHT))
-
-    play_button = Button(play_image, (SCREEN_WIDTH - BUTTON_WIDTH) // 2, SCREEN_HEIGHT // 6, start_game)
-    exit_button = Button(exit_image, (SCREEN_WIDTH - BUTTON_WIDTH - 12) // 2, SCREEN_HEIGHT // 2, exit_game)
+    play_button = Button(play_image, (SCREEN_WIDTH - play_image.get_width()) // 2, 300, start_game)
+    exit_button = Button(exit_image, (SCREEN_WIDTH - exit_image.get_width()) // 2, 420, exit_game)
 
     running = True
     while running:
-        screen.fill((255, 255, 255))
+        screen.blit(background, (0, 0))
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                play_button.check_click(event.pos)
-                exit_button.check_click(event.pos)
-        
+                if play_button.check_click(event.pos) == "quit":
+                    running = False
+                if exit_button.check_click(event.pos) == "quit":
+                    running = False
+                    
         play_button.draw(pygame.mouse.get_pos())
         exit_button.draw(pygame.mouse.get_pos())
         pygame.display.flip()
         
     pygame.quit()
-    sys.exit()
 
-def load_level_images(directory):
+def load_level_images(levels):
     level_images = []
-    for filename in os.listdir(directory):
-        if filename.endswith(".png"):
-            image = pygame.image.load(os.path.join(directory, filename))
-            scaled_image = pygame.transform.scale(image, (BIG_BUTTON_WIDTH, BIG_BUTTON_HEIGHT))  
-            level_images.append(scaled_image)
+    for level in levels:
+        assets = load_level_assets(level_directory(level))
+        image = pygame.image.load(assets[".png"])
+        scaled_image = pygame.transform.scale(image, (BIG_BUTTON_WIDTH, BIG_BUTTON_HEIGHT))
+        level_images.append(scaled_image)
     return level_images
 
 current_level = 0
 def level_menu():
 
-    level_images = load_level_images("menu_assets/levels")
-    
+    levels = find_levels()
+    level_images = load_level_images(levels)
 
     def next_level():
         global current_level
@@ -111,21 +104,23 @@ def level_menu():
         current_level = (current_level - 1) % len(level_images)
 
     def start_level():
-        GD.game_loop(current_level + 1)
+        return game_loop.game_loop(levels[current_level])
 
 
-    arrow_right_image = pygame.image.load("menu_assets/arrow_right.png")
-    arrow_left_image = pygame.image.load("menu_assets/arrow_left.png")
+    background = pygame.image.load(os.path.join(MENU_DIR, "levels_background.png")).convert()
+    arrow_right_image = pygame.image.load(os.path.join(MENU_DIR, "arrow_right.png")).convert_alpha()
+    arrow_left_image = pygame.image.load(os.path.join(MENU_DIR, "arrow_left.png")).convert_alpha()
 
-    arrow_right_image = pygame.transform.scale(arrow_right_image, (ARROW_WIDTH, ARROW_HEIGHT))
-    arrow_left_image = pygame.transform.scale(arrow_left_image, (ARROW_WIDTH, ARROW_HEIGHT))
+    arrow_y = (SCREEN_HEIGHT - arrow_right_image.get_height()) // 2
+    arrow_right_x = (SCREEN_WIDTH + BIG_BUTTON_WIDTH) // 2 + ARROW_DISTANCE
+    arrow_left_x = (SCREEN_WIDTH - BIG_BUTTON_WIDTH) // 2 - ARROW_DISTANCE - arrow_left_image.get_width()
 
-    arrow_right = Button(arrow_right_image, SCREEN_WIDTH - 150, SCREEN_HEIGHT // 2 - 50, next_level)
-    arrow_left = Button(arrow_left_image, 50, SCREEN_HEIGHT // 2 - 50, previous_level)
+    arrow_right = Button(arrow_right_image, arrow_right_x, arrow_y, next_level)
+    arrow_left = Button(arrow_left_image, arrow_left_x, arrow_y, previous_level)
 
     running = True
     while running:
-        screen.fill((255, 255, 255))
+        screen.blit(background, (0, 0))
         
         current_level_image = level_images[current_level]
         current_level_x = (screen.get_width() - current_level_image.get_width()) // 2
@@ -138,17 +133,17 @@ def level_menu():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                return "quit"
+
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return "back"
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 arrow_left.check_click(event.pos)
                 arrow_right.check_click(event.pos)
-                current_level_button.check_click(event.pos)
+                if current_level_button.check_click(event.pos) == "quit":
+                    return "quit"
 
         pygame.display.flip()
 
-    pygame.quit()
-    sys.exit()
 
-#if __name__ == "__main__":
-#    start_menu()

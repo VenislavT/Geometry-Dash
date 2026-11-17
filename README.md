@@ -1,198 +1,118 @@
-# **Geometry Dash Clone**
+# Geometry Dash Clone
 
-Този проект представлява 2D игра подобна на **Geometry Dash**, написана на Python с помощта на **Pygame**. Включва механики като **портали променящи гравитацията и скоростта, шипове, платформи, сфери за отскок и финиш линия**.
-
-
-## **Как работи играта?**
-1. **Менюто** позволява избор на ниво.
-2. **Всеки символ в `.txt` файла представлява елемент в нивото**:
-   - `#` -> Платформа
-   - `B` -> Начална позиция на топката
-   - `F` -> Финиш линия
-   - `P` -> Портал променящ гравитацията
-   - `S` -> Портал променящ скоростта (ускоряване)
-   - `D` -> Портал променящ скоростта (забавяне)
-   - `J` -> Сфера позволяваща да се скочи отново
-   - `^` -> Шип
-   - `v` -> Обърнат шип
-
-3. **Играчът управлява топката**, като използва **SPACE** за скок.
-4. **Целта е да стигне финиш линията, избягвайки препятствия**.
-5. **Ако топката докосне шип**, нивото се рестартира.
-6. **Ако топката достигне финиш линията**, нивото приключва и се връщаме към менюто за избор на ниво.
-
-## **Основни класове и файлове**
-
-### **1. `GD_ball.py` (class Ball - играчът)**
-```python
-def __init__(self, x, y)
-```
-- Създава обект на топката с начална позиция `(x, y)`.
-- Задава скорост по x и y чрез `velocityX` и `velocityY`.
-- Вкарва се гравитация чрез `gravity`.
-
-**Основни методи:**
-- `draw(screen, camera_x)`: Рисува топката на екрана.
-- `jump()`: Позволява на топката да скача, ако е на земята.
-- `update(...)`: Променя позицията по x, прилага гравитация и проверява за сблъсъци.
-
----
-
-### **2. `GD_tile.py` (class Tile - платформи)**
-```python
-def __init__(self, x, y):
-```
-- Създава **платформа**, върху която топката може да се движи, с позиция `(x,y)` и задава цвят `BLUE`.
-
-**Основни методи:**
-- `draw(screen, camera_x)`: Рисува платформа на екрана.
-- `check_collision(ball)`: Проверява сблъсък между топката и платформата като проверява първо каква е гравитацията. Ако е нормална имаме прегледи за сблъсък отгоре и отдясно. Ако е обърната имаме прегледи за отдолу и отдясно.
-
-    - `self.y` е горна стена.
-    - `self.y + TILE_SIZE` е долна стена.
-    - `self.x` е лява стена.
-    - `self.x + TILE_SIZE` е дясна стена.
-
----
-
-### **3. `GD_spike.py` (class Spike - шипове и class InvertedSpike - обърнати шипове)**
-```python
-def __init__(self, x, y):
-```
-- Шипове, които елиминират играча при докосване.
-- Задава се начална координата на долния/горен(**Spike/InvertedSpike**) ляв ъгъл с `(x,y)`
-
-**Основни методи:**
-- `draw(screen, camera_x)`: Рисува шиповете на екрана, като първо се определят 3те точки в зависимост от `(x,y)`.
-- `check_collision(ball)`: Проверява дали топката е ударила шип, чрез прегледи дали топката влиза в триъгълника: `point_in_triangle()`.
-
----
-
-### **4. `GD_gravity_portal.py` (class Gravity_portal - портал променящ гравитацията)**
-```python
-def __init__(self, x, y):
-```
-- Когато топката влезе в този портал, **гравитацията се обръща**.
-- Получава координати `(x,y)` на долен ляв ъгъл.
-
-**Основни методи:**
-- `draw(screen, camera_x)`: Рисува портала.
-- `check_collision(ball)`: Обръща гравитацията, ако топката премине през портала. Проверките за докосване са като при `class Tile`.
-
----
-
-### **5. `GD_speed_portal.py` (class Speed_portal - портал променящ скоростта)**
-```python
-def __init__(self, x, y, type):
-```
-- Може да увеличи или намали скоростта на топката.
-- Цветът е различен в зависимост от ролята му. Жълт при забързване и лилав при забавяне.
-- Координатите се задават като при `class Portal` с `(x,y)`.
-
-**Основни методи:**
-- `draw(screen, camera_x)`: Рисува портала.
-- `check_collision(ball)`: Променя скоростта на топката при докосване. Проверките за сблъсък са като при `class Tile`.
-
----
-
-### **6. `GD_jump_orb.py` (class JumpOrb - сфера позволяваща да се скочи отново при преминаване през нея)**
-```python
-def __init__(self, x, y):
-```
-- Позволява на топката да скача при натискане на **SPACE**.
-- Координати се задават с `(x,y)`.
-
-**Основни методи:**
-- `draw(screen, camera_x)`: Рисува сферата.
-- `check_collision(ball)`: Топката скача отново, ако тя я докосне и играчът натисне **SPACE**.
-
----
-
-### **7. `GD_finish_line.py` (class FinishLine - финиш линия)**
-```python
-def __init__(self, x, y):
-```
-- Ако топката докосне тази линия, **нивото приключва**.
-- Координати се задават с `(x,y)`.
-
-**Основни методи:**
-- `draw(screen, camera_x)`: Рисува финиш линията.
-- `check_collision(ball)`: Проверява дали топката е стигнала финала и се праща сигнал.
-
----
-
-### **8. `GD_message.py`** (class Message - съобщения)
-```python
-def __init__(self, x, y, text):
-```
-- Създава текстови съобщения, които се показват на екрана (например **„Level Complete!“**).
-- Позиция на съобщението се задава с `(x,y)`.
-- `self.text` - Текстът на съобщението.
-
-**Основни методи:**
-- `draw(screen, camera_x)` - Рисува съобщението на екрана.
+2D platformer in Python with Pygame, inspired by Geometry Dash. The player runs to the right on their own and has to jump over spikes, flip gravity through portals and reach the finish flag. Every level is a plain text file, so new levels can be made in any text editor.
 
 
-## **Основни файлове**
+## Features
 
-### **1. `GD_functions.py`** (Основна логика на играта)
+- Three levels, each with its own theme (grass, sand, snow) and music
+- Gravity portals that turn the player upside down, so the ceiling becomes the floor
+- Speed portals that make the level faster or slower
+- Jump orbs that give one more jump in the air
+- Collision between the player and the spikes, so that they kill the player when they are touched
+- Platforms choose their image on their own depending on the platforms next to them
+- Attempt counter 
+- The level and the music start over after every death
 
-#### **Функция `load_level_assets(directory)`**
-- Зарежда файловете **с нивото** (`.txt`) и **музиката** (`.mp3`) от дадена директория.
 
-### **class Game**
+## Example
 
-```python
-def __init__(self, screen):
-```
-- Класът **`Game`** управлява цялата игра, включително **зареждането на нива, движението на играча, обработката на сблъсъци и завършването на нивото**.
+![Gameplay](docs/gameplay.gif)
 
-**Атрибути:**
-- `self.ball` - Обектът на играча (топката).
-- `self.platforms, self.portals, self.speed_portals` - Списъци с всички обекти в нивото.
-- `self.spikes, self.inverted_spikes, self.jumping_orbs` - Препятствия и орбити за скок.
-- `self.finish_line` - Крайна точка на нивото.
-- `self.camera_x` - Камерата се мести спрямо движението на топката.
-- `self.attempts` - Броят опити за преминаване на нивото.
-- `self.level_complete` - Флаг, указващ дали нивото е завършено.
+![Level 2](docs/screenshot_level2.png)
 
-**Основни методи:**
-- `load_level(level)` - Зарежда ниво от `.txt` файл и добавя обекти според символите в текста.
-- `place_ball_on_nearest_platform()` - Поставя топката върху най-близката платформа при стартиране.
-- `reset_level()` - Рестартира текущото ниво.
-- `draw()` - Рисува всички обекти на екрана.
-- `update()` - Проверява движението на топката, взаимодействията и дали нивото е завършено.
-- `handle_events()` - Обработва входните събития (например **натискане на SPACE за скок**).
+![Level 3](docs/screenshot_level3.png)
 
----
 
-### **2. `menu.py`** (Меню за избор на нива)
-### **class Button**
-```python
-def __init__(self, image, x, y, action = None):
-```
-- Създава интерактивни бутони за **стартиране на играта, избор на нива и изход**.
+## Running
 
-**Атрибути:**
-- `self.image, self.x, self.y` - Визията и позицията на бутона.
-- `self.action` - Функция, която се изпълнява при натискане.
+Requires Python 3.10 or newer.
 
-**Основни методи:**
-- `is_hovered(position)` - Проверява дали мишката е над бутона.
-- `draw(position)` - Рисува бутона, като го уголемява при ховър.
-- `check_click(position)` - Проверява дали бутонът е натиснат и изпълнява свързаното действие.
-
-#### **Функция `start_menu()`**
-- Показва **главното меню**, където играчът може да **започне играта или да излезе**.
-
-#### **Функция `level_menu()`**
-- Позволява избор на нива чрез **прелистване на изображения на нива**.
-- Използва `arrow_left` и `arrow_right` бутони за смяна на нива.
-
-#### **Функция `load_level_images(directory)`**
-- Зарежда изображения на нива от **menu_assets/levels/**.
-
-## **Как се стартира играта?**
 ```bash
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
 python main.py
 ```
+
+On Linux or macOS, activate the virtual environment with `source venv/bin/activate` instead.
+
+
+## Controls
+
+- `Space`: jump; hold it to jump again as soon as the player lands
+- `Space` while touching a jump orb: jump in the air
+- `Esc`: back to the previous menu
+
+
+## Level format
+
+Every level is a folder in `assets/levels`, named `level1`, `level2` and so on. The folder holds:
+
+- `.txt` file with the map of the level
+- `.mp3` file with the music
+- `.png` file with the picture shown in the level menu
+- `tiles` folder with the images of the ground, the clouds and the background
+
+
+In the `.txt` file every character is one tile:
+
+- `#`: platform
+- `C`: cloud platform
+- `B`: start position of the player
+- `F`: finish flag
+- `^`: spike
+- `v`: spike on the ceiling
+- `P`: gravity portal
+- `S`: portal that makes the level faster
+- `D`: portal that makes the level slower
+- `J`: jump orb
+- `M`: the attempt counter
+
+To add a new level, create a folder `assets/levels/level4` with the same files.
+
+
+## Project structure
+
+```
+main.py                 entry point
+src/
+    constants.py        screen size, physics settings and folders
+    menu.py             main menu and level selection
+    game_loop.py        the loop that runs one level
+    game.py             loading a level, the camera, drawing the world
+    ball.py             the player
+    level_object.py     base class for every object in the level
+    tile.py             platforms and clouds
+    spike.py            spikes and the collision between the player and a spike
+    gravity_portal.py   gravity portal
+    speed_portal.py     speed portal
+    jump_orb.py         jump orb
+    finish_line.py      finish flag
+    message.py          text inside the level
+    sprites.py          loading the images and choosing the image of every platform
+assets/
+    levels/             one folder for every level
+    menu/               menu buttons and backgrounds
+    shared/             images used in every level
+tests/                  unit tests
+```
+
+
+## Tests
+
+```bash
+python -m unittest discover -s tests
+```
+
+
+## Credits
+
+- Graphics: [Pixel Platformer](https://kenney.nl/assets/pixel-platformer) by Kenney, licensed CC0
+- Music: "Colorblind" by Panda Eyes, "Heart Afire" by Defqwop (ft. Strix) and "Highscore" by Teminite & Panda Eyes. The music belongs to its authors and is used only in this non-commercial student project.
+
+
+## Possible improvements
+
+- Level editor inside the game, instead of editing the text files by hand.
+- Checkpoints for a practice mode, so that a long level doesn't start over from the beginning after every death.

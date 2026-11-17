@@ -1,0 +1,9 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+test images/
+kenney_pixel-platformer/
+*.zip
+.vscode/
+docs/documentation_bg.md
